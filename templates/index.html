@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>WeatherScope Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  </head>
+  <body>
+    <main class="dashboard-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Live weather dashboard</p>
+          <h1>WeatherScope</h1>
+          <p class="hero-copy">Waehle einen Ort aus und erhalte aktuelle Wetterdaten, Stundenwerte und eine 7-Tage-Prognose.</p>
+        </div>
+        <form class="search-panel" id="searchForm" autocomplete="off">
+          <label for="cityInput">Ort suchen</label>
+          <div class="search-row">
+            <input id="cityInput" name="city" type="search" placeholder="z. B. Berlin, Hamburg, New York" value="Berlin">
+            <button type="submit">Suchen</button>
+          </div>
+          <div class="location-list" id="locationList" aria-live="polite"></div>
+        </form>
+      </section>
+      <section class="status-bar" id="statusBar">Bereit. Suche einen Ort, um das Dashboard zu laden.</section>
+      <section class="current-grid">
+        <article class="current-card">
+          <div>
+            <p class="card-label" id="locationName">Noch kein Ort ausgewaehlt</p>
+            <h2><span id="currentTemp">--</span><span class="unit">deg C</span></h2>
+            <p class="condition" id="condition">Wetterdaten erscheinen hier.</p>
+          </div>
+          <div class="weather-mark" id="weatherMark">SUN</div>
+        </article>
+        <article class="metric-card"><span>Gefuehlt</span><strong id="feelsLike">-- deg C</strong></article>
+        <article class="metric-card"><span>Luftfeuchte</span><strong id="humidity">-- %</strong></article>
+        <article class="metric-card"><span>Wind</span><strong id="wind">-- km/h</strong></article>
+        <article class="metric-card"><span>Niederschlag</span><strong id="precipitation">-- mm</strong></article>
+      </section>
+      <section class="panel">
+        <div class="section-heading"><h2>Naechste Stunden</h2><span id="timezone">Zeitzone: --</span></div>
+        <div class="hourly-strip" id="hourlyStrip"></div>
+      </section>
+      <section class="panel">
+        <div class="section-heading"><h2>7-Tage-Prognose</h2><span>Temperatur, Regenchance und Wind</span></div>
+        <div class="daily-list" id="dailyList"></div>
+      </section>
+    </main>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  </body>
+</html>
