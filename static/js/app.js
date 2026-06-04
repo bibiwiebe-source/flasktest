@@ -37,6 +37,38 @@ function number(value, fallback = "--") {
   return value === null || value === undefined ? fallback : Math.round(value);
 }
 
+function demoWeather(location, reason) {
+  const now = new Date();
+  return {
+    location: formatLocation(location),
+    timezone: "browser-demo",
+    offline: true,
+    errorReason: reason,
+    current: {
+      temperature: 20,
+      feelsLike: 19,
+      humidity: 62,
+      precipitation: 0,
+      windSpeed: 12,
+      description: "Demo weather",
+      icon: "cloud-sun"
+    },
+    hourly: Array.from({ length: 12 }, (_, index) => ({
+      time: new Date(now.getTime() + index * 60 * 60 * 1000).toISOString(),
+      temperature: 18 + (index % 5),
+      rainChance: 20 + (index % 4) * 5
+    })),
+    daily: Array.from({ length: 7 }, (_, index) => ({
+      time: new Date(now.getTime() + index * 24 * 60 * 60 * 1000).toISOString(),
+      high: 21 + index,
+      low: 12 + index,
+      rainChance: 25 + index * 3,
+      windSpeed: 14 + index,
+      description: "Demo forecast"
+    }))
+  };
+}
+
 async function fetchJson(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
@@ -91,7 +123,7 @@ async function searchLocations(query) {
       button.addEventListener("click", () => loadWeather(data.locations[button.dataset.index]));
     });
 
-    loadWeather(data.locations[0]);
+    await loadWeather(data.locations[0]);
   } finally {
     searchButton.disabled = false;
     searchButton.textContent = "Suchen";
@@ -107,12 +139,19 @@ async function loadWeather(location) {
     lon: location.longitude,
     label
   });
-  const data = await fetchJson(`/api/weather?${params.toString()}`);
-  renderWeather(data);
-  setStatus(data.offline
-    ? `Offline-Demodaten fuer ${data.location}. Pruefe Internet/DNS der VM fuer Live-Wetter.`
-    : `Aktualisiert fuer ${data.location}.`
-  );
+
+  try {
+    const data = await fetchJson(`/api/weather?${params.toString()}`);
+    renderWeather(data);
+    setStatus(data.offline
+      ? `Offline-Demodaten fuer ${data.location}. Pruefe Internet/DNS der VM fuer Live-Wetter.`
+      : `Aktualisiert fuer ${data.location}.`
+    );
+  } catch (error) {
+    const data = demoWeather(location, error.message);
+    renderWeather(data);
+    setStatus(`Wetter-API nicht erreichbar: ${error.message}`, true);
+  }
 }
 
 function renderWeather(data) {
