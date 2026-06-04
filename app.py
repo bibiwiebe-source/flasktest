@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from os import environ
 
 import requests
@@ -9,6 +9,19 @@ app = Flask(__name__)
 
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+
+FALLBACK_LOCATIONS = [
+    {"name": "Berlin", "admin1": "Berlin", "country": "Germany", "latitude": 52.52, "longitude": 13.405, "timezone": "Europe/Berlin"},
+    {"name": "Hamburg", "admin1": "Hamburg", "country": "Germany", "latitude": 53.5511, "longitude": 9.9937, "timezone": "Europe/Berlin"},
+    {"name": "Munich", "admin1": "Bavaria", "country": "Germany", "latitude": 48.1374, "longitude": 11.5755, "timezone": "Europe/Berlin"},
+    {"name": "Cologne", "admin1": "North Rhine-Westphalia", "country": "Germany", "latitude": 50.9375, "longitude": 6.9603, "timezone": "Europe/Berlin"},
+    {"name": "Frankfurt am Main", "admin1": "Hesse", "country": "Germany", "latitude": 50.1109, "longitude": 8.6821, "timezone": "Europe/Berlin"},
+    {"name": "Stuttgart", "admin1": "Baden-Wuerttemberg", "country": "Germany", "latitude": 48.7758, "longitude": 9.1829, "timezone": "Europe/Berlin"},
+    {"name": "Dusseldorf", "admin1": "North Rhine-Westphalia", "country": "Germany", "latitude": 51.2277, "longitude": 6.7735, "timezone": "Europe/Berlin"},
+    {"name": "New York", "admin1": "New York", "country": "United States", "latitude": 40.7128, "longitude": -74.006, "timezone": "America/New_York"},
+    {"name": "London", "admin1": "England", "country": "United Kingdom", "latitude": 51.5072, "longitude": -0.1276, "timezone": "Europe/London"},
+    {"name": "Paris", "admin1": "Ile-de-France", "country": "France", "latitude": 48.8566, "longitude": 2.3522, "timezone": "Europe/Paris"},
+]
 
 WEATHER_CODES = {
     0: ("Clear sky", "sun"),
@@ -39,6 +52,70 @@ def weather_label(code):
     return WEATHER_CODES.get(code, ("Unknown conditions", "cloud-question"))
 
 
+def normalize_location(item):
+    return {
+        "id": f"{item['latitude']},{item['longitude']}",
+        "name": item.get("name"),
+        "country": item.get("country"),
+        "admin1": item.get("admin1"),
+        "latitude": item.get("latitude"),
+        "longitude": item.get("longitude"),
+        "timezone": item.get("timezone"),
+    }
+
+
+def fallback_location_search(query):
+    needle = query.casefold()
+    matches = [
+        normalize_location(item)
+        for item in FALLBACK_LOCATIONS
+        if needle in item["name"].casefold()
+    ]
+    return matches or [normalize_location(FALLBACK_LOCATIONS[0])]
+
+
+def fallback_weather(label):
+    now = datetime.now(timezone.utc)
+    return {
+        "location": label,
+        "timezone": "offline-demo",
+        "generatedAt": now.isoformat(),
+        "offline": True,
+        "current": {
+            "temperature": 20,
+            "feelsLike": 19,
+            "humidity": 62,
+            "precipitation": 0,
+            "windSpeed": 12,
+            "windDirection": 180,
+            "description": "Offline demo data",
+            "icon": "cloud-sun",
+            "isDay": True,
+        },
+        "hourly": [
+            {
+                "time": (now + timedelta(hours=hour)).isoformat(),
+                "temperature": 18 + (hour % 5),
+                "rainChance": 20 + (hour % 4) * 5,
+                "description": "Demo weather",
+            }
+            for hour in range(12)
+        ],
+        "daily": [
+            {
+                "time": (now + timedelta(days=day)).date().isoformat(),
+                "high": 21 + day,
+                "low": 12 + day,
+                "rainChance": 25 + day * 3,
+                "windSpeed": 14 + day,
+                "description": "Demo forecast",
+                "icon": "cloud-sun",
+            }
+            for day in range(7)
+        ],
+    }
+
+
 @app.get("/")
 def index():
     return render_template("index.html")
@@ -63,23 +140,15 @@ def locations():
         )
         response.raise_for_status()
     except requests.RequestException:
-        return jsonify({"error": "Location search is currently unavailable."}), 502
+        return jsonify({"locations": fallback_location_search(query), "offline": True})
 
     results = response.json().get("results", [])
     locations = [
-        {
-            "id": f"{item['latitude']},{item['longitude']}",
-            "name": item.get("name"),
-            "country": item.get("country"),
-            "admin1": item.get("admin1"),
-            "latitude": item.get("latitude"),
-            "longitude": item.get("longitude"),
-            "timezone": item.get("timezone"),
-        }
+        normalize_location(item)
         for item in results
         if item.get("latitude") is not None and item.get("longitude") is not None
     ]
-    return jsonify({"locations": locations})
+    return jsonify({"locations": locations or fallback_location_search(query)})
 
 
 @app.get("/api/weather")
@@ -107,11 +176,7 @@ def weather():
                     "wind_speed_10m",
                     "wind_direction_10m",
                 ],
-                "hourly": [
-                    "temperature_2m",
-                    "precipitation_probability",
-                    "weather_code",
-                ],
+                "hourly": ["temperature_2m", "precipitation_probability", "weather_code"],
                 "daily": [
                     "weather_code",
                     "temperature_2m_max",
@@ -126,7 +191,7 @@ def weather():
         )
         response.raise_for_status()
     except requests.RequestException:
-        return jsonify({"error": "Weather data is currently unavailable."}), 502
+        return jsonify(fallback_weather(label))
 
     payload = response.json()
     current = payload.get("current", {})
