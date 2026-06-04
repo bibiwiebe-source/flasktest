@@ -71,7 +71,7 @@ function demoWeather(location, reason) {
 
 async function fetchJson(url) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), 20000);
 
   let response;
   try {
