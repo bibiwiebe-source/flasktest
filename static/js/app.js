@@ -38,7 +38,21 @@ function number(value, fallback = "--") {
 }
 
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  let response;
+  try {
+    response = await fetch(url, { signal: controller.signal });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("Die Anfrage hat zu lange gedauert. Bitte nochmal versuchen.");
+    }
+    throw new Error("Netzwerkfehler beim Laden. Bitte pruefe, ob die Container laufen.");
+  } finally {
+    clearTimeout(timeout);
+  }
+
   const contentType = response.headers.get("content-type") || "";
   const body = contentType.includes("application/json")
     ? await response.json()
@@ -53,6 +67,7 @@ async function fetchJson(url) {
 async function searchLocations(query) {
   setStatus("Suche passende Orte...");
   searchButton.disabled = true;
+  searchButton.textContent = "Sucht...";
   locationList.innerHTML = "";
 
   try {
@@ -79,6 +94,7 @@ async function searchLocations(query) {
     loadWeather(data.locations[0]);
   } finally {
     searchButton.disabled = false;
+    searchButton.textContent = "Suchen";
   }
 }
 
@@ -145,4 +161,4 @@ searchForm.addEventListener("submit", async (event) => {
   }
 });
 
-searchForm.dispatchEvent(new Event("submit"));
+setStatus("Gib einen Ort ein und klicke auf Suchen.");
