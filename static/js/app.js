@@ -2,6 +2,7 @@ const searchForm = document.querySelector("#searchForm");
 const cityInput = document.querySelector("#cityInput");
 const locationList = document.querySelector("#locationList");
 const statusBar = document.querySelector("#statusBar");
+const searchButton = document.querySelector("#searchButton");
 
 const iconMap = {
   "sun": "SUN",
@@ -38,7 +39,11 @@ function number(value, fallback = "--") {
 
 async function fetchJson(url) {
   const response = await fetch(url);
-  const body = await response.json();
+  const contentType = response.headers.get("content-type") || "";
+  const body = contentType.includes("application/json")
+    ? await response.json()
+    : { error: await response.text() };
+
   if (!response.ok) {
     throw new Error(body.error || "Die Anfrage ist fehlgeschlagen.");
   }
@@ -47,31 +52,51 @@ async function fetchJson(url) {
 
 async function searchLocations(query) {
   setStatus("Suche passende Orte...");
+  searchButton.disabled = true;
   locationList.innerHTML = "";
-  const data = await fetchJson(`/api/locations?q=${encodeURIComponent(query)}`);
-  if (!data.locations.length) {
-    setStatus("Kein Ort gefunden. Probiere eine andere Schreibweise.", true);
-    return;
+
+  try {
+    const data = await fetchJson(`/api/locations?q=${encodeURIComponent(query)}`);
+    if (!data.locations.length) {
+      setStatus("Kein Ort gefunden. Probiere eine andere Schreibweise.", true);
+      return;
+    }
+
+    setStatus(data.offline
+      ? "Externe Ortssuche nicht erreichbar. Nutze lokale Treffer."
+      : "Waehle einen Treffer aus der Liste."
+    );
+    locationList.innerHTML = data.locations.map((location, index) => `
+      <button class="location-option" type="button" data-index="${index}">
+        ${formatLocation(location)}
+      </button>
+    `).join("");
+
+    [...locationList.querySelectorAll(".location-option")].forEach((button) => {
+      button.addEventListener("click", () => loadWeather(data.locations[button.dataset.index]));
+    });
+
+    loadWeather(data.locations[0]);
+  } finally {
+    searchButton.disabled = false;
   }
-  setStatus("Waehle einen Treffer aus der Liste.");
-  locationList.innerHTML = data.locations.map((location, index) => `
-    <button class="location-option" type="button" data-index="${index}">
-      ${formatLocation(location)}
-    </button>
-  `).join("");
-  [...locationList.querySelectorAll(".location-option")].forEach((button) => {
-    button.addEventListener("click", () => loadWeather(data.locations[button.dataset.index]));
-  });
-  loadWeather(data.locations[0]);
 }
 
 async function loadWeather(location) {
   const label = formatLocation(location);
   setStatus(`Lade Wetterdaten fuer ${label}...`);
-  const params = new URLSearchParams({ lat: location.latitude, lon: location.longitude, label });
+
+  const params = new URLSearchParams({
+    lat: location.latitude,
+    lon: location.longitude,
+    label
+  });
   const data = await fetchJson(`/api/weather?${params.toString()}`);
   renderWeather(data);
-  setStatus(`Aktualisiert fuer ${data.location}.`);
+  setStatus(data.offline
+    ? `Offline-Demodaten fuer ${data.location}. Pruefe Internet/DNS der VM fuer Live-Wetter.`
+    : `Aktualisiert fuer ${data.location}.`
+  );
 }
 
 function renderWeather(data) {
@@ -85,11 +110,23 @@ function renderWeather(data) {
   document.querySelector("#wind").textContent = `${number(current.windSpeed)} km/h`;
   document.querySelector("#precipitation").textContent = `${current.precipitation ?? "--"} mm`;
   document.querySelector("#timezone").textContent = `Zeitzone: ${data.timezone || "--"}`;
+
   document.querySelector("#hourlyStrip").innerHTML = data.hourly.map((hour) => `
-    <article class="hour-card"><span>${formatHour(hour.time)}</span><strong>${number(hour.temperature)} deg C</strong><span>${number(hour.rainChance)} % Regen</span></article>
+    <article class="hour-card">
+      <span>${formatHour(hour.time)}</span>
+      <strong>${number(hour.temperature)} deg C</strong>
+      <span>${number(hour.rainChance)} % Regen</span>
+    </article>
   `).join("");
+
   document.querySelector("#dailyList").innerHTML = data.daily.map((day) => `
-    <article class="day-row"><strong>${formatDay(day.time)}</strong><span>${day.description}</span><span>${number(day.low)} deg / ${number(day.high)} deg</span><span>${number(day.rainChance)} % Regen</span><span>${number(day.windSpeed)} km/h</span></article>
+    <article class="day-row">
+      <strong>${formatDay(day.time)}</strong>
+      <span>${day.description}</span>
+      <span>${number(day.low)} deg / ${number(day.high)} deg</span>
+      <span>${number(day.rainChance)} % Regen</span>
+      <span>${number(day.windSpeed)} km/h</span>
+    </article>
   `).join("");
 }
 
@@ -100,6 +137,7 @@ searchForm.addEventListener("submit", async (event) => {
     setStatus("Bitte gib mindestens zwei Zeichen ein.", true);
     return;
   }
+
   try {
     await searchLocations(query);
   } catch (error) {
