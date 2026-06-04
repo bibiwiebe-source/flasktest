@@ -136,7 +136,7 @@ def locations():
         response = requests.get(
             GEOCODING_URL,
             params={"name": query, "count": 8, "language": "en", "format": "json"},
-            timeout=8,
+            timeout=3,
         )
         response.raise_for_status()
     except requests.RequestException:
@@ -187,7 +187,7 @@ def weather():
                 "timezone": "auto",
                 "forecast_days": 7,
             },
-            timeout=8,
+            timeout=4,
         )
         response.raise_for_status()
     except requests.RequestException:
