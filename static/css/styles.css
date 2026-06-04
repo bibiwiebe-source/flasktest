@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   --bg: #eef5f8;
-  --panel: rgba(255, 255, 255, 0.86);
+  --panel: rgba(255, 255, 255, 0.84);
   --panel-solid: #ffffff;
   --text: #10202a;
   --muted: #637683;
@@ -12,14 +12,18 @@
   --shadow: 0 20px 60px rgba(16, 32, 42, 0.14);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   min-height: 100vh;
   margin: 0;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
-  background: radial-gradient(circle at top left, rgba(0, 166, 166, 0.24), transparent 32rem), linear-gradient(135deg, #f7fbfd 0%, var(--bg) 48%, #dcecf2 100%);
+  background:
+    radial-gradient(circle at top left, rgba(0, 166, 166, 0.24), transparent 32rem),
+    linear-gradient(135deg, #f7fbfd 0%, var(--bg) 48%, #dcecf2 100%);
 }
 
 .dashboard-shell {
@@ -36,12 +40,15 @@ body {
   min-height: 340px;
   padding: 42px;
   border-radius: 8px;
-  background: linear-gradient(120deg, rgba(0, 95, 146, 0.88), rgba(0, 166, 166, 0.72)), url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=80") center/cover;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.28), transparent 16rem),
+    linear-gradient(120deg, rgba(0, 95, 146, 0.94), rgba(0, 166, 166, 0.78));
   color: #ffffff;
   box-shadow: var(--shadow);
 }
 
-.eyebrow, .card-label {
+.eyebrow,
+.card-label {
   margin: 0 0 12px;
   font-size: 0.78rem;
   font-weight: 800;
@@ -49,7 +56,11 @@ body {
   text-transform: uppercase;
 }
 
-h1, h2, p { margin-top: 0; }
+h1,
+h2,
+p {
+  margin-top: 0;
+}
 
 h1 {
   margin-bottom: 14px;
@@ -84,7 +95,8 @@ h1 {
   gap: 10px;
 }
 
-input, button {
+input,
+button {
   min-height: 48px;
   border: 0;
   border-radius: 8px;
@@ -99,7 +111,9 @@ input {
   outline: 2px solid transparent;
 }
 
-input:focus { outline-color: rgba(255, 255, 255, 0.68); }
+input:focus {
+  outline-color: rgba(255, 255, 255, 0.68);
+}
 
 button {
   padding: 0 18px;
@@ -109,7 +123,14 @@ button {
   cursor: pointer;
 }
 
-button:hover { background: #004f78; }
+button:hover {
+  background: #004f78;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
 
 .location-list {
   display: grid;
@@ -127,9 +148,14 @@ button:hover { background: #004f78; }
   text-align: left;
 }
 
-.location-option:hover { background: rgba(255, 255, 255, 0.24); }
+.location-option:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
 
-.status-bar, .panel, .current-card, .metric-card {
+.status-bar,
+.panel,
+.current-card,
+.metric-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -169,7 +195,9 @@ button:hover { background: #004f78; }
   line-height: 1;
 }
 
-.unit { font-size: 1.5rem; }
+.unit {
+  font-size: 2rem;
+}
 
 .condition {
   margin: 0;
@@ -197,12 +225,15 @@ button:hover { background: #004f78; }
   padding: 22px;
 }
 
-.metric-card span, .section-heading span {
+.metric-card span,
+.section-heading span {
   color: var(--muted);
   font-size: 0.92rem;
 }
 
-.metric-card strong { font-size: 1.55rem; }
+.metric-card strong {
+  font-size: 1.55rem;
+}
 
 .panel {
   margin-top: 16px;
@@ -230,7 +261,8 @@ button:hover { background: #004f78; }
   padding-bottom: 4px;
 }
 
-.hour-card, .day-row {
+.hour-card,
+.day-row {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel-solid);
@@ -241,7 +273,10 @@ button:hover { background: #004f78; }
   padding: 14px;
 }
 
-.hour-card span, .day-row span { color: var(--muted); }
+.hour-card span,
+.day-row span {
+  color: var(--muted);
+}
 
 .hour-card strong {
   display: block;
@@ -262,11 +297,19 @@ button:hover { background: #004f78; }
   padding: 16px;
 }
 
-.day-row strong { font-size: 1rem; }
+.day-row strong {
+  font-size: 1rem;
+}
 
 @media (max-width: 980px) {
-  .hero, .current-grid { grid-template-columns: 1fr; }
-  .metric-card { min-height: 120px; }
+  .hero,
+  .current-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card {
+    min-height: 120px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -280,12 +323,17 @@ button:hover { background: #004f78; }
     padding: 24px;
   }
 
-  .search-row, .section-heading { flex-direction: column; }
+  .search-row,
+  .section-heading {
+    flex-direction: column;
+  }
 
   .current-card {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .day-row { grid-template-columns: 1fr 1fr; }
+  .day-row {
+    grid-template-columns: 1fr 1fr;
+  }
 }
